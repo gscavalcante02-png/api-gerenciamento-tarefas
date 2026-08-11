@@ -1,7 +1,7 @@
 import os 
 from dotenv import load_dotenv
 from sqlmodel import SQLModel, create_engine, Session
-from database.models import Tarefa
+from app.database.models import Tarefa, Usuario
 
 # 1. Carrega as váriaveis de ambiente .env
 load_dotenv()
@@ -15,6 +15,7 @@ engine = create_engine(DATABASE_URL, echo=True)
 
 # 4. Função que cria as tabelas no banco se elas não existirem 
 def inicializar_banco():
+    # ⚠️ Apaga as tabelas antigas para recriar com as colunas novas
     SQLModel.metadata.create_all(engine)
 
 
