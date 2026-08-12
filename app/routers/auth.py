@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
-from app.core.security import criar_token_acesso, verificar_senha
+from app.core.jwt import criar_token_acesso
+from app.core.security import verificar_senha
 from app.database import crud
 from app.database.db import get_session
 
