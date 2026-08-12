@@ -1,14 +1,37 @@
+"""Módulo principal da aplicação FastAPI.
+
+Este arquivo é responsável por inicializar a API, incluir os roteadores
+de endpoints (Usuários, Tarefas, Autenticação) e executar eventos de inicialização.
+"""
+
 from fastapi import FastAPI
 from app.database.db import inicializar_banco
-from app.routers import usuarios, tarefas, auth
+from app.routers import auth, tarefas, usuarios
 
-app = FastAPI(title="Gerenciador de Tarefas com Usuários")
+# Instância principal do FastAPI com metadados para a documentação interativa
+app = FastAPI(
+    title="API de Gerenciamento de Tarefas",
+    description="API RESTful para gerenciamento de tarefas pessoais com autenticação JWT e PostgreSQL.",
+    version="1.0.0",
+)
+
 
 @app.on_event("startup")
 def on_startup():
+    """Evento executado automaticamente ao iniciar a aplicação.
+
+    Garante a criação de todas as tabelas no banco de dados caso ainda não existam.
+    """
     inicializar_banco()
 
-# Inclui os módulos de rotas registrados
-app.include_router(usuarios.router, prefix="/usuarios", tags=["Usuários"])
-app.include_router(tarefas.router, prefix="/tarefas", tags=["Tarefas"])
-app.include_router(auth.router, prefix="/auth", tags=["Autenticação"])
+
+# Inclusão dos roteadores (os prefixos e tags já estão definidos em cada arquivo de rota)
+app.include_router(auth.router)
+app.include_router(usuarios.router)
+app.include_router(tarefas.router)
+
+
+@app.get("/", tags=["Health Check"])
+def health_check():
+    """Endpoint de checagem para verificar se a API está online."""
+    return {"status": "ok", "mensagem": "API de Gerenciamento de Tarefas está rodando perfeitamente!"}

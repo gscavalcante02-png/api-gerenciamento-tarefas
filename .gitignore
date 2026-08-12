@@ -2,12 +2,29 @@
 .venv/
 venv/
 env/
+ENV/
 
-# Cache do Python
+# Cache do Python e Compilação
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
 
 # Arquivos de Configuração Sensíveis e Banco de Dados Local
 .env
+.env.*
+!.env.example
 *.db
 *.sqlite3
+
+# Configurações de IDEs e Editores de Código
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db

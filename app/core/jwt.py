@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
-from jose import jwt,JWSError
+from jose import jwt,JWTError
 from fastapi import HTTPException, status
-from app.core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.core.config import settings
 
 
 
@@ -10,13 +10,13 @@ def criar_token_acesso(dados: dict) -> str:
     dados_para_codificar = dados.copy()
 
     # Calculamos o momento exato em que token vai expirar
-    expiracao = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expiracao = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     # Adicionamos a data de expiração no campo reservado 'exp' do JWT   
     dados_para_codificar.update({"exp": expiracao})
 
     # Assinamos e geramos a string do token JWT
-    token_jwt = jwt.encode(dados_para_codificar, SECRET_KEY, algorithm=ALGORITHM)
+    token_jwt = jwt.encode(dados_para_codificar, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     return token_jwt
 
@@ -30,7 +30,11 @@ def decodificar_token_acesso(token: str) -> dict:
 
     try:
         # Abre o token e verifica se a assinatura e o tempo de expiração estão válidos
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token, 
+            settings.SECRET_KEY, 
+            algorithms=[settings.ALGORITHM]
+        )
 
         # Pega a identificação do dono do token (o e-mail ou ID que guardamos no login)
         identificacao_usuario: str = payload.get("sub")
@@ -40,5 +44,5 @@ def decodificar_token_acesso(token: str) -> dict:
 
         return payload
 
-    except JWSError:
+    except JWTError:
         raise excecao_autenticacao

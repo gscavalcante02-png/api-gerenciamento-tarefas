@@ -1,33 +1,56 @@
-import os 
-from dotenv import load_dotenv
-from sqlmodel import SQLModel, create_engine, Session
-from app.database.models import Tarefa, Usuario
+"""Módulo de Conexão e Gerenciamento do Banco de Dados.
 
-# 1. Carrega as váriaveis de ambiente .env
-load_dotenv()
+Configura o motor de conexão (Engine) do SQLAlchemy com o driver 'psycopg' v3,
+gerencia o ciclo de vida das sessões (SessionLocal) e disponibiliza
+funções utilitárias para injeção de dependência e inicialização de tabelas.
+"""
 
-# 2. Pega a URL de conexão de arquivo .env
-DATABASE_URL = os.getenv("DATABASE_URL")
+from typing import Generator
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlmodel import Session, SQLModel
 
-# 3. Cria o motor (engine) de conexão com PostgreSQL 
-# echo=True faz o SQLModel mostrar no terminal os comandos SQL que está rodando 
+from app.core.config import settings
+
+# Monta a URL de conexão do PostgreSQL utilizando as credenciais carregadas do .env
+DATABASE_URL = (
+    f"postgresql+psycopg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
+    f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+)
+
+# Engine central do SQLAlchemy
+# echo=True exibe no terminal os comandos SQL gerados durante as operações
 engine = create_engine(DATABASE_URL, echo=True)
 
-# 4. Função que cria as tabelas no banco se elas não existirem 
-def inicializar_banco():
-    # ⚠️ Apaga as tabelas antigas para recriar com as colunas novas
-    SQLModel.metadata.create_all(engine)
+# Fábrica para geração de sessões síncronas do banco de dados
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Base declarativa legada para compatibilidade de mapeamento ORM
+Base = declarative_base()
 
 
-# 5. Função que abre uma "sessão" para fazermos operações no banco
-def get_session():
-    with Session(engine) as session:
-        yield session
+def get_session() -> Generator[Session, None, None]:
+    """Injeção de dependência para fornecer uma sessão do banco de dados por requisição.
+
+    Abre uma nova sessão a cada chamada e garante o fechamento correto (db.close())
+    ao finalizar a execução da rota, mesmo que ocorram exceções.
+
+    Yields:
+        Session: Sessão ativa para interagir com o PostgreSQL.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
+def inicializar_banco() -> None:
+    """Cria todas as tabelas mapeadas nos modelos (SQLModel) diretamente no banco.
 
-# Bloco de teste temporário
-if __name__ == "__main__":
-    print("Tentando conectar ao banco...")
-    inicializar_banco()
-    print("✅ Conexão realizada com sucesso!")
+    Executado durante a inicialização da aplicação FastAPI.
+    """
+    # Garante a importação dos modelos para que o SQLModel registre a metadata das tabelas
+    from app.database import models  # noqa: F401
+
+    SQLModel.metadata.create_all(bind=engine)

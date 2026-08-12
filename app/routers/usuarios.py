@@ -1,35 +1,71 @@
+"""Módulo de rotas para gerenciamento de usuários.
+
+Contém os endpoints para cadastro de novos usuários e consulta
+de tarefas atreladas ao usuário autenticado.
+"""
+
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
-from app.database.db import get_session
 from app.database import crud
+from app.database.db import get_session
+from app.dependencies import obter_usuario_atual
 from app.database.models import Usuario
+from app.schemas.tarefa import TarefaResponse
+from app.schemas.usuario import UsuarioCreate, UsuarioResponse
 
-router = APIRouter()
+# Define o prefixo '/usuarios' e a tag para agrupar no Swagger UI
+router = APIRouter(prefix="/usuarios", tags=["Usuários"])
 
-@router.post("/", response_model=Usuario, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/",
+    response_model=UsuarioResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Cadastra um novo usuário",
+)
 def cadastrar_usuario(
-    nome: str,
-    email: str,
-    senha: str, 
-    session: Session = Depends(get_session)
+    usuario_data: UsuarioCreate,
+    session: Session = Depends(get_session),
 ):
-    # 1. Verifica se o email já está cadastrado no banco
-    usuario_existente = crud.buscar_usuario_por_email(session, email)
+    """Cadastra um novo usuário no sistema.
+
+    - **nome**: Nome completo do usuário.
+    - **email**: Endereço de e-mail único.
+    - **senha**: Senha em texto puro (será salva como hash criptografado).
+
+    Raises:
+        HTTPException: 400 BAD REQUEST se o e-mail já estiver cadastrado.
+    """
+    # 1. Verifica se o e-mail já está cadastrado no banco de dados
+    usuario_existente = crud.buscar_usuario_por_email(session, usuario_data.email)
     if usuario_existente:
         raise HTTPException(
-            status_code=400,
-            detail="Email já cadastrado no sistema."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="E-mail já cadastrado no sistema.",
         )
 
-    # 2. Cria o novo usuário com a senha hash
-    novo_usuario = crud.criar_usuario(session, nome, email, senha)
+    # 2. Cria o novo usuário gerando o hash de senha
+    novo_usuario = crud.criar_usuario(
+        session=session,
+        nome=usuario_data.nome,
+        email=usuario_data.email,
+        senha_limpa=usuario_data.senha,
+    )
+
     return novo_usuario
 
 
-@router.get("/{usuario_id}/tarefas")
-def listar_tarefas_do_usuario(
-    usuario_id: int,
-    session: Session = Depends(get_session)
+@router.get(
+    "/me/tarefas",
+    response_model=List[TarefaResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Lista as tarefas do usuário autenticado",
+)
+def listar_minhas_tarefas(
+    session: Session = Depends(get_session),
+    usuario_atual: Usuario = Depends(obter_usuario_atual),
 ):
-    return crud.listar_tarefas_do_usuario(session, usuario_id)
+    """Retorna a lista completa de tarefas pertencentes ao usuário logado na sessão."""
+    return crud.listar_tarefas_do_usuario(session, usuario_id=usuario_atual.id)
