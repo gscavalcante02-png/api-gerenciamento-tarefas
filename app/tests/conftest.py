@@ -40,3 +40,37 @@ def client_fixture(session: Session) -> Generator[TestClient, None, None]:
     yield  client
 
     app.dependency_overrides.clear()
+
+@pytest.fixture(name="token_usuario")
+def token_usuario_fixture(client: TestClient) -> str:
+    """Cadastra um usuário de teste, faz login, e devolve o token pronto para usar."""
+
+    client.post("/usuarios/", json={
+        "nome": "Dono Tarefa",
+        "email": "dono.tarefa@exemplo.com",
+        "senha": "senha123"
+    })
+
+    response = client.post("/auth/login", data={
+        "username": "dono.tarefa@exemplo.com",
+        "password": "senha123"
+    })
+
+    return response.json()["access_token"]
+
+@pytest.fixture(name="token_outro_usuario")
+def token_outro_usuario_fixture(client: TestClient) -> str:
+    """Cadastra um segundo usuário de teste, faz login, e devolve o token dele."""
+
+    client.post("/usuarios/", json={
+        "nome": "Outro Dono",
+        "email": "outro.dono@exemplo.com",
+        "senha": "senha456"
+    })
+
+    response = client.post("/auth/login", data={
+        "username": "outro.dono@exemplo.com",
+        "password": "senha456"
+    })
+
+    return response.json()["access_token"]

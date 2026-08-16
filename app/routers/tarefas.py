@@ -106,3 +106,4 @@ def deletar_tarefa(
             detail="Tarefa não encontrada ou não pertence a este usuário.",
         )
     return None
+

@@ -21,3 +21,4 @@ def test_nao_permite_email_duplicado(client):
     resposta_duplicada = client.post("/usuarios/", json=dados)  # segunda vez, mesmo e-mail de novo
 
     assert resposta_duplicada.status_code == 400            # confere se a API recusou a segunda tentativa
+

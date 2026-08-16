@@ -43,9 +43,10 @@ projeto_tarefas/
 │   ├── database/       # Conexão com banco de dados e funções CRUD
 │   ├── routers/        # Endpoints (auth, usuarios, tarefas)
 │   ├── schemas/        # Schemas de validação do Pydantic
+│   ├── tests/          # Testes automatizados (pytest)
 │   ├── dependencies.py # Injeção de dependências (Autenticação JWT)
 │   └── main.py         # Arquivo principal de inicialização da API
-│
+│-
 ├── .env                # Variáveis de ambiente (não versionado)
 ├── .gitignore          # Arquivos ignorados pelo Git
 └── requirements.txt    # Dependências do projeto
@@ -129,6 +130,17 @@ Retorna:
   "responsavel": "Seu Nome",
   "descricao": "Revisar relacionamentos N:N"
 }
+```
+
+## 🧪 Testes
+
+O projeto conta com testes automatizados usando pytest, cobrindo cadastro, autenticação e as rotas de tarefas — incluindo verificação de que um usuário nunca acessa ou modifica dados de outro.
+
+Para rodar:
+
+```bash
+pip install pytest httpx
+python -m pytest -v
 ```
 
 ## 📖 Documentação
