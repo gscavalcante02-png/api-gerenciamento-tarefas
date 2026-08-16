@@ -90,3 +90,20 @@ def test_deletar_tarefa(client, token_usuario):
     )
 
     assert response.status_code == 204
+
+def test_usuario_nao_deleta_tarefa_de_outro(client, token_usuario, token_outro_usuario):
+    """Garante que um usuário não consegue deletar a tarefa de outro."""
+
+    resposta_criar = client.post(
+        "/tarefas/",
+        json={"titulo": "Tarefa do A", "responsavel": "A", "descricao": "..."},
+        headers={"Authorization": f"Bearer {token_usuario}"}
+    )
+    id_tarefa = resposta_criar.json()["id"]
+
+    response = client.delete(
+        f"/tarefas/{id_tarefa}",
+        headers={"Authorization": f"Bearer {token_outro_usuario}"}
+    )
+
+    assert response.status_code == 404
